@@ -36,7 +36,7 @@ def load_checkin_data():
 	#print user_checkins[user]
 
 	return user_checkins
-
+'''
 def make_node(dict_users, index):
 	userid = dict_users["user_id"]
 	username = dict_users["name"]
@@ -44,33 +44,48 @@ def make_node(dict_users, index):
 	user_node = Node(id = index, name = username, user_id = userid, friendlist= userfriends)
 	
 	return user_node
-
+'''
 
 def building_graph():
 	user_data = "yelp_academic_dataset_user.json"
 	user_checkins = load_checkin_data()
 	node_dict = {}
-	node_list=[]
+	user_list=[]
 	index = 1
+	G = nx.Graph()
 	with open(user_data,'r') as f:
 		for line in f:
 			dict_users = json.loads(line)
 			userid = dict_users['user_id']
 			username = dict_users['name']
 			userfriends = dict_users['friends']
-			user_node = Node(id = index, name = username, user_id = userid, friendlist= userfriends)
-			user_node.checkins = user_checkins[user_node.user_id]
-			node_dict[index] = user_node
-			node_list.append(index)
-			print index
-			if index > 90000:
+			#print userfriends
+			#user_node = Node(id = index, name = username, user_id = userid, friendlist= userfriends)
+			#user_node.checkins = user_checkins[user_node.user_id]
+			node_dict[userid] = index
+			user_list.append(index)
+			print index		
+			G.add_node(index, name = username, user_id = userid, friendlist = userfriends, checkins = user_checkins[userid])																																																																																																																																																																																																																																																																																			 			if index > 50000:
+			if index > 50000:	
 				break
 			index += 1
 
 
-	G = nx.Graph()
-	G.add_nodes_from(node_list)
-	print G.number_of_nodes()
+	
+	#G.add_nodes_from(user_list)
+	#print G.number_of_nodes()
+	#print user_node.friends
+	adj_list = []
+	for user in G.nodes():																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																									
+		for frnd in G.node[user]['friendlist']:
+			if frnd in node_dict:
+				temp = (user,node_dict[frnd])
+				if (node_dict[frnd],user) not in adj_list:
+					print "adding edge"
+					adj_list.append(temp)
+	G.add_edges_from(adj_list)
+	nx.write_adjlist(G,"test.adjlist")
+	
 
 def main():
 	#load_checkin_data()
