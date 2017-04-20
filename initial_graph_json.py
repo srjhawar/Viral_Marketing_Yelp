@@ -53,22 +53,18 @@ def building_graph():
 	node_list=[]
 	index = 1
 	with open(user_data,'r') as f:
-		objects = ijson.items(f,'yelp_academic_dataset_user.item')
-		for o in objects:
-			print o
-		sys.exit(1)
-		for prefix,event,value in parser:
-			if prefix == 'user_id':
-				userid = value
-			if prefix == 'name':
-				username = value
-			if prefix == 'friends':
-				userfriends = value
+		for line in f:
+			dict_users = json.loads(line)
+			userid = dict_users['user_id']
+			username = dict_users['name']
+			userfriends = dict_users['friends']
 			user_node = Node(id = index, name = username, user_id = userid, friendlist= userfriends)
 			user_node.checkins = user_checkins[user_node.user_id]
 			node_dict[index] = user_node
 			node_list.append(index)
 			print index
+			if index > 90000:
+				break
 			index += 1
 
 
