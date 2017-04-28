@@ -1,0 +1,36 @@
+mongoimport --db yelp --collection business --file yelp_academic_dataset_business-restaurants.json
+mongoimport --db yelp --collection users --file yelp_academic_dataset_user.json
+mongoimport --db yelp --collection checkin --file yelp_academic_dataset_tip.json
+db.business.find({ "city": "Las Vegas" }).count()
+db.business.find({ "city": "Las Vegas" }).forEach(function(d){db.lvbusiness.insert(d)})
+db.lvbusiness.find({ "categories": "Restaurants" }).count()
+db.lvbusiness.find({ "categories": "Restaurants" }).forEach(function(d){db.lvrestbusiness.insert(d)})
+mongoexport --db yelp --collection lvrestbusiness --out C:\Users\payal\Documents\BI\capstone\IMP\business.json
+busid = db.lvrestbusiness.distinct('business_id')
+db.checkin.find({"business_id": {$in : busid} } ).count()
+db.checkin.find({"business_id": {$in : busid} } ).forEach(function(d){db.lvcheckin.insert(d)})
+mongoexport --db yelp --collection lvcheckin --out C:\Users\payal\Documents\BI\capstone\IMP\checkin.json
+userid = db.lvcheckin.distinct('user_id')
+db.users.find({"user_id": {$in : userid} } ).count()
+db.users.find({"user_id": {$in : userid} } ).forEach(function(d){db.lvuser.insert(d)})
+mongoexport --db yelp --collection lvuser --out C:\Users\payal\Documents\BI\capstone\IMP\users.json
+
+db.lvrestbusiness.find({ "categories": "American (New)" }).count()
+db.lvrestbusiness.find({ "categories": "American (New)" }).forEach(function(d){db.ambusiness.insert(d)})
+mongoexport --db yelp --collection ambusiness --out C:\Users\payal\Documents\BI\capstone\IMP\am-business.json
+ambusid = db.ambusiness.distinct('business_id')
+db.checkin.find({"business_id": {$in : ambusid} } ).count()
+db.checkin.find({"business_id": {$in : ambusid} } ).forEach(function(d){db.amcheckin.insert(d)})
+mongoexport --db yelp --collection amcheckin --out C:\Users\payal\Documents\BI\capstone\IMP\am-checkin.json
+amuserid = db.amcheckin.distinct('user_id')
+db.users.find({"user_id": {$in : amuserid} } ).count()
+db.users.find({"user_id": {$in : amuserid} } ).forEach(function(d){db.amuser.insert(d)})
+mongoexport --db yelp --collection amuser --out C:\Users\payal\Documents\BI\capstone\IMP\am-users.json
+
+mongoimport --db yelp --collection filtusers --file am-users-filtered.json
+u = db.filtusers.distinct('user_id')
+db.amcheckin.find({"user_id": {$in : u} } ).forEach(function(d){db.filtcheckin.insert(d)})
+mongoexport --db yelp --collection filtcheckin --out C:\Users\payal\Documents\BI\capstone\IMP\am-checkin-filtered.json
+b = db.filtcheckin.distinct('business_id')
+db.ambusiness.find({"business_id": {$in : b} } ).forEach(function(d){db.filtbusiness.insert(d)})
+mongoexport --db yelp --collection filtbusiness --out C:\Users\payal\Documents\BI\capstone\IMP\am-business-filtered.json
