@@ -79,3 +79,62 @@ p_v_to_u = np.zeros((10637,10637))
 ## t_numerator is for (v,u) for all businesses
 T_numerator = collections.defaultdict(dict)
 
+
+#print users_checkins_dict
+
+for business in train_business:
+	user_timestamp_dict = business_checkins_dict[business]
+	## List of tuples of (user,timestamp)
+	sorted_checkins = sorted(user_timestamp_dict.items(), key=operator.itemgetter(1))
+	current_table = {}
+	for tuple_x in sorted_checkins:
+		user = tuple_x[0]
+		date = tuple_x[1]
+		parents = []
+		friends = friend_list[user]
+		for friend in current_table:
+			if friend in friends:
+				u_time = date  ## node getting influenced
+				v_time = current_table[friend]  #influencer
+				if (v_time < u_time):
+					A_v_to_u[friend,user] += 1 
+					## to update T
+					if friend in T_numerator:
+						if user in T_numerator[friend]:
+							T_numerator[friend][user] += u_time - v_time
+						else:
+							T_numerator[friend][user] = u_time - v_time
+					else:
+						T_numerator[friend][user] = u_time - v_time
+					T_v_to_u[friend,user] = (T_numerator[friend][user]).days/A_v_to_u[friend,user]
+					parents.append(friend)
+		current_table[user] = date
+
+
+for v in range(10635,10637):
+	for u in range(10635,10637):
+		if v in users_checkins_dict:
+			p_v_to_u[v,u] = A_v_to_u[v,u]/users_checkins_dict[v]
+		else:
+			p_v_to_u[v,u] = 0
+		print p_v_to_u[v,u]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
