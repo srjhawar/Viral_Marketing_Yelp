@@ -23,13 +23,13 @@ def eigen_centrality(G,seeders):
 	for tuple in sorted_eigen_centrality:
 		user = tuple[0]
 		eigen_score = tuple[1]
-		print user
-		print eigen_score
 		eigen_centrality_dict[user] = eigen_score
 	return eigen_centrality_dict
 	
 
-
+G = nx.read_adjlist("am-filtered.adjlist")
+dict = eigen_centrality(G)
+print dict
 '''
 pr = nx.pagerank(G, alpha=0.9)
 print type(pr)
