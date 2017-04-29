@@ -17,19 +17,22 @@ def eigen_centrality(G,seeders):
 	
 	eigen_centrality_dict= {}
 	centrality = nx.eigenvector_centrality(G)
+	print centrality['6983']
+	print centrality['719']
 	#print(['%s %0.2f'%(node,centrality[node]) for node in centrality])
 	sorted_eigen_centrality = sorted(centrality.items(), key=operator.itemgetter(1), reverse = True)
-	sorted_eigen_centrality = sorted_eigen_centrality[:seeders+1]
+	#sorted_eigen_centrality = sorted_eigen_centrality[:seeders+1]
 	for tuple in sorted_eigen_centrality:
-		user = tuple[0]
+		user = int(tuple[0])
 		eigen_score = tuple[1]
 		eigen_centrality_dict[user] = eigen_score
 	return eigen_centrality_dict
 	
 
 G = nx.read_adjlist("am-filtered.adjlist")
-dict = eigen_centrality(G)
+dict = eigen_centrality(G,20)
 print dict
+
 '''
 pr = nx.pagerank(G, alpha=0.9)
 print type(pr)
