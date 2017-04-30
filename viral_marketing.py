@@ -211,6 +211,93 @@ def calculate_influencers(seeders, W_p, W_e):
 
 	return seeders_dict
 
+# this function determines following reviews for the given data set arg for each user
+def evaluate(business_list):
+	user_following_count = {}
+	for business in business_list:
+		user_timestamp_dict = business_checkins_dict[business]
+		## List of tuples of (user,timestamp)
+		sorted_checkins = sorted(user_timestamp_dict.items(), key=operator.itemgetter(1))
+		current_table={}
+		for tuple1 in sorted_checkins:
+			#print tuple1
+			user=tuple1[0]
+			date=tuple1[1]
+			parents = []
+			friends = friend_list[user]
+			for friend in current_table:
+				if friend in friends:
+					u_time = date  ## node getting influenced
+					v_time = current_table[friend]  #influencer
+					if(v_time < u_time):
+						parents.append(friend)
+			# note it is important here to notice that we are dividing the credit for the following review equally among all its parents
+			# so, if a review was following 2 reviews, the 2 users who made those reviews would receive credit 0.5 and 0.5
+			for parent in parents:
+				c=1/len(parents)
+				if parent in user_following_count:
+					user_following_count[parent] += c
+				else:
+					user_following_count[parent] = c
+			current_table[user] = date
+		
+	return user_following_count
+
+# to find correlation of stars with user_following_count 
+# to find correlation of fans with user_following_count
+#Since we do not observe strong correlation of the above two factors with user_following_count
+#We do not include them to find influencers
+def correlation():
+	stars_list = []
+	fans_list = []
+	following_count_list = []
+	user_following_count_dict = evaluate(all_business_list)
+	for user in user_following_count_dict:
+		if user in user_following_count_dict and user in uid_stars and user in uid_fans:
+			stars_list.append(uid_stars[user])
+			fans_list.append(uid_fans[user])
+			following_count_list.append(user_following_count_dict[user])
+	print "pearsonr r,p values for stars vs following count"
+	print pearsonr(stars_list,following_count_list)
+	print "pearsonr r,p values for fans vs following count"
+	print pearsonr(fans_list,following_count_list)
+	plt.title("fans vs following count")
+	#plt.plot(following_count_list,stars_list)
+	#plt.savefig("stars_correlation.png")
+	#matplotlib.pyplot.scatter(following_count_list,stars_list)
+	matplotlib.pyplot.scatter(fans_list,following_count_list)
+	matplotlib.pyplot.savefig("fans_followingcount.png")
+
+
+
+def evaluate_ground_truth(algorithm_influencer_list):
+	tp = 0
+	tn = 0
+	fp = 0
+	fn = 0
+	for influencer in algorithm_influencer_list:
+		if influencer in ground_truth:
+			tp += 1
+		else:
+			fp += 1
+
+	for influencer in ground_truth:
+		if influencer not in algorithm_influencer_list:
+			fn +=1
+	
+	for user in users_checkins_dict:
+		if user not in algorithm_influencer_list and user not in ground_truth:
+			tn += 1
+
+	precision = tp/(tp + fp)
+	recall = tp/(tp+fn)
+	accuracy = (tp + tn)/(tp+tn+fp+fn)
+	print "precision,recall,accuracy"
+	return precision, recall,accuracy
+
+
+
+
 # initialization - A_v_to_u, T_v_to_u and p_v_to_u are initialized as empty 2-D matrices with 0
 # we can think of them as adjacency matrices with metric based values for each combination of v and u
 A_v_to_u = np.zeros((10637,10637))
@@ -255,8 +342,19 @@ phase2(train_business)
 # set number of seeders needed
 seed_num = 100
 
+# determine following checkins for each user
+user_following_count = evaluate(test_business)
+
+correlation()
+
 # determine the top seeders 
 seeders_dict_only_checkins = calculate_influencers(seed_num, 1.0, 0.0)
 seeders_dict = calculate_influencers(seed_num, 0.65, 0.35)
+
+
+
+
+
+
 
 
