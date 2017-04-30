@@ -297,6 +297,59 @@ def evaluate_ground_truth(algorithm_influencer_list):
 
 
 
+flag={}
+pu={}
+for u in range(1,10637):
+	pu[u] = 0
+
+def algo3(business_list):
+	t=0.8
+	Tp=0
+	Fp=0
+	Fn=0
+	Tn=0
+	for business in business_list:
+		user_timestamp_dict = business_checkins_dict[business]
+		## List of tuples of (user,timestamp)
+		sorted_checkins = sorted(user_timestamp_dict.items(), key=operator.itemgetter(1))
+		result_table = {}
+		# look at checkins in ascending chronological order
+		for tuple_x in sorted_checkins:
+			v = tuple_x[0]
+			date = tuple_x[1]
+			# find a user's friends
+			friends = friend_list[v]
+			# we consider only those checkins of friends that are already added to the table
+			# if a friend was already added to the current table before a user and he checked in before the user
+			# we can then say, that he is a candidate for influencing user and we call it the user's parent
+			if v in result_table:
+				flag[v]=1
+			else:
+				result_table[v]=date
+				flag[v]=2
+			for u in friends:
+				if u in result_table:
+					pu[v]=pu[v]+((1-pu[v])*p_v_to_u[u,v])
+				else:
+					result_table[u]=date
+					flag[u]=0
+
+		for u in result_table:
+			if flag[u]==1 and pu[u]>=t:
+				Tp+=1
+			if flag[u]==1 and pu[u]<t:
+				Fn+=1
+			if flag[u]==0 and pu[u]>=t:
+				Fp+=1
+			if flag[u]==0 and pu[u]<t:
+				Tn+=1		
+	precision = Tp/(Tp + Fp)
+	recall = Tp/(Fp+Fn)
+	accuracy = (Tp + Tn)/(Tp+Tn+Fp+Fn)
+	print "precision,recall,accuracy"
+	return precision, recall,accuracy
+
+
 
 # initialization - A_v_to_u, T_v_to_u and p_v_to_u are initialized as empty 2-D matrices with 0
 # we can think of them as adjacency matrices with metric based values for each combination of v and u
@@ -351,6 +404,77 @@ correlation()
 seeders_dict_only_checkins = calculate_influencers(seed_num, 1.0, 0.0)
 seeders_dict = calculate_influencers(seed_num, 0.65, 0.35)
 
+## To find top 100 influencers from test business : GROUND TRUTH
+sorted_user_following_count = sorted(user_following_count.items(), key=operator.itemgetter(1),reverse= True)
+ground_truth = {}
+for tuple1 in sorted_user_following_count:
+	user=tuple1[0]
+	count=tuple1[1]
+	ground_truth[user] = count
+
+#T_v_to_u = None
+checkins_test = {}
+
+print "Finding influencers using eigen_centrality algorithm"
+p=nx.eigenvector_centrality(G)
+eigen_influencers = []
+sorted_p = sorted(p.items(), key=operator.itemgetter(1), reverse = True)
+sorted_p = sorted_p[:seed_num]
+sum_top_eig=0
+for tuple_y in sorted_p:
+	u = int(tuple_y[0])
+	if u in user_following_count:
+		eigen_influencers.append(u)
+		print "user, following checkins: %d, %f" % (u, user_following_count[u])
+		sum_top_eig+=user_following_count[u]
+print "Final reviews following the top influencers reviews by eigen_centrality algorithm: "+str(sum_top_eig)
+
+print "Trying to find precision, recall, accuracy"
+print evaluate_ground_truth(eigen_influencers)
+print "Now finding influencers using our algorithm but only considering the checkins factor (weights of checkin factors = 1)"
+sum=0
+
+action_log_algorithm_influencers = []
+for user in seeders_dict_only_checkins:
+	if user in user_following_count: 
+		print "user, following checkins: %d, %f" % (user, user_following_count[user])
+		action_log_algorithm_influencers.append(user)
+		sum += user_following_count[user]
+print "Final reviews following the top influencers reviews by our algorithm but only considering the checkins factor (weights of checkin factors = 1) "+str(sum)
+
+print "Trying to find precision, recall,accuracy"
+print evaluate_ground_truth(action_log_algorithm_influencers)
+
+weighted_combination_influencers = []
+print "Now finding influencers using our algorithm but only considering the checkins factor (weights of checkin factors = 1)"
+sum_top_inf=0
+for user in seeders_dict:
+	if user in user_following_count: 
+		weighted_combination_influencers.append(user)
+		print "user, following checkins: %d, %f" % (user, user_following_count[user])
+		sum_top_inf += user_following_count[user]
+print "Final reviews following the top influencers reviews by our algorithm considering the checkins factor and eigen_centrality factor "+str(sum_top_inf)
+
+print "Trying to find precision, recall,accuracy"
+print evaluate_ground_truth(weighted_combination_influencers)
+
+
+T_v_to_u = None
+A_v_to_u = None
+
+sum_total_foll=0
+for user in range(1,10637):
+	if user in user_following_count: 
+		sum_total_foll+=user_following_count[user]
+
+print "Final total number of following reviews: "+str(sum_total_foll)
+
+
+
+print "\nInfluencability Calculation"
+
+print "Metrics for Influencability calculated:"
+print algo3(test_business)
 
 
 
